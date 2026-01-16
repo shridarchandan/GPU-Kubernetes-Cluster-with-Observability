@@ -15,7 +15,7 @@ This project demonstrates:
 
 ## 🏗️ Architecture
 
-
+![EKS Cluster](screenshots/Architecture.png)
 
 ---
 
