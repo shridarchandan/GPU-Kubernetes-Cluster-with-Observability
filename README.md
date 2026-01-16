@@ -108,7 +108,7 @@ kubectl patch clusterpolicy cluster-policy \
   --type merge \
   -p '{"spec":{"devicePlugin":{"config":{"name":"time-slicing-config","default":"any"}}}}'
 ```
-![Time Slicing](screenshots/timeslicing.jpeg)
+![Time Slicing](screenshots/timesclicing.jpeg)
 
 
 ### 6. Install Monitoring Stack
@@ -128,7 +128,7 @@ kubectl apply -f manifests/04-workloads/gpu-test-nvidia-smi.yaml
 kubectl logs gpu-test
 # Expected: Tesla T4 details
 ```
-![NVIDIA GPU Node](screenshots/NvidiapodonTaintedNode.jpeg)
+![NVIDIA GPU Node](screenshots/NvediapodonTaintedNode.jpeg)
 
 ### Deploy 3 pods sharing 1 GPU
 ```bash
