@@ -59,6 +59,7 @@ eksctl create cluster \
   --nodegroup-name cpu-nodes \
   --node-type t3.medium \
   --nodes 1
+```
 
 ### 2. Add GPU Node Pool
 ```bash
@@ -71,4 +72,63 @@ eksctl create nodegroup \
   --nodes-min 0 \
   --nodes-max 1 \
   --node-labels role=gpu-worker
+```
 
+### 3. Apply GPU Node Taint
+```bash
+kubectl taint nodes $(kubectl get nodes -l role=gpu-worker -o jsonpath='{.items.metadata.name}') \
+  nvidia.com/gpu=present:NoSchedule
+```
+
+### 4. Install NVIDIA GPU Operator
+```bash
+helm repo add nvidia https://nvidia.github.io/gpu-operator
+helm repo update
+
+kubectl create ns gpu-operator
+
+helm install gpu-operator nvidia/gpu-operator \
+  --namespace gpu-operator \
+  -f manifests/02-gpu-operator/gpu-operator-values.yaml
+```
+
+### 5. Enable GPU Time-Slicing
+```bash
+kubectl apply -f manifests/03-time-slicing/time-slicing-configmap.yaml
+
+kubectl patch clusterpolicy cluster-policy \
+  -n gpu-operator \
+  --type merge \
+  -p '{"spec":{"devicePlugin":{"config":{"name":"time-slicing-config","default":"any"}}}}'
+```
+
+### 6. Install Monitoring Stack
+```bash
+./manifests/05-monitoring/install-monitoring.sh
+```
+### 📊 Validation
+Verify GPU is available
+```bash
+kubectl describe node -l role=gpu-worker | grep nvidia.com/gpu
+# Expected: nvidia.com/gpu: 4 (with time-slicing)
+```
+
+### Run GPU smoke test
+```bash
+kubectl apply -f manifests/04-workloads/gpu-test-nvidia-smi.yaml
+kubectl logs gpu-test
+# Expected: Tesla T4 details
+```
+
+### Deploy 3 pods sharing 1 GPU
+```bash
+kubectl apply -f manifests/04-workloads/timeslice-demo-pods.yaml
+kubectl -n gpu-timeslice-demo get pods -o wide
+# Expected: All 3 pods on same GPU node, all Running
+```
+
+### Access Grafana
+```bash
+kubectl -n monitoring get svc kube-prometheus-grafana
+# Open EXTERNAL-IP in browser, login: admin / <get password from secret>
+```
